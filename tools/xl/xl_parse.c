@@ -2577,6 +2577,14 @@ skip_vfb:
             free(buf2);
         }
     }
+    
+     e = xlu_cfg_get_list_as_string_list(config, "dt_compatible",
+                                        &b_info->dt_compatible, 1);
+    if (e && e != ESRCH) {
+            fprintf(stderr,"xl: Unable to parse dt_compatible\n");
+            exit(-ERROR_FAIL);
+    }
+
 
      e = xlu_cfg_get_list_as_string_list(config, "dt_passthrough_nodes",
 		      &b_info->dt_passthrough_nodes, 1);
