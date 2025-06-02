@@ -209,7 +209,7 @@
     do {                                                    \
         __typeof__(&(hnd)) _sxghr_tmp = &(hnd);             \
         _sxghr_tmp->q = 0;                                  \
-        _sxghr_tmp->p = (val);                              \
+        _sxghr_tmp->p = val;                                \
     } while ( 0 )
 #define set_xen_guest_handle(hnd, val) set_xen_guest_handle_raw(hnd, val)
 
@@ -336,6 +336,11 @@ struct xen_arch_domainconfig {
     uint16_t tee_type;
     /* IN */
     uint32_t nr_spis;
+    /*
+     * IN
+     * OSID used by virtual GSX device.
+     */
+    uint8_t vgsx_osid;
     /*
      * OUT
      * Based on the property clock-frequency in the DT timer node.
@@ -467,6 +472,23 @@ typedef uint64_t xen_callback_t;
 #define GUEST_VPCI_MEM_SIZE                 xen_mk_ullong(0x10000000)
 
 /*
+ * 16 MB is reserved for virtio-pci configuration space based on calculation
+ * 8 bridges * 2 buses x 32 devices x 8 functions x 4 KB = 16 MB
+ */
+#define GUEST_VIRTIO_PCI_ECAM_BASE          xen_mk_ullong(0x33000000)
+#define GUEST_VIRTIO_PCI_TOTAL_ECAM_SIZE    xen_mk_ullong(0x01000000)
+#define GUEST_VIRTIO_PCI_HOST_ECAM_SIZE     xen_mk_ullong(0x00200000)
+
+/* 64 MB is reserved for virtio-pci memory */
+#define GUEST_VIRTIO_PCI_ADDR_TYPE_MEM    xen_mk_ullong(0x02000000)
+#define GUEST_VIRTIO_PCI_MEM_ADDR         xen_mk_ullong(0x34000000)
+#define GUEST_VIRTIO_PCI_MEM_SIZE         xen_mk_ullong(0x04000000)
+
+/* Guest TPM device */
+#define GUEST_TPM_BASE    xen_mk_ullong(0x0c000000)
+#define GUEST_TPM_SIZE    xen_mk_ullong(0x00005000)
+
+/*
  * 16MB == 4096 pages reserved for guest to use as a region to map its
  * grant table in.
  */
@@ -476,6 +498,11 @@ typedef uint64_t xen_callback_t;
 #define GUEST_MAGIC_BASE  xen_mk_ullong(0x39000000)
 #define GUEST_MAGIC_SIZE  xen_mk_ullong(0x01000000)
 
+/* 64 MB is reserved for virtio-pci Prefetch memory */
+#define GUEST_VIRTIO_PCI_ADDR_TYPE_PREFETCH_MEM    xen_mk_ullong(0x42000000)
+#define GUEST_VIRTIO_PCI_PREFETCH_MEM_ADDR         xen_mk_ullong(0x3a000000)
+#define GUEST_VIRTIO_PCI_PREFETCH_MEM_SIZE         xen_mk_ullong(0x04000000)
+
 #define GUEST_RAM_BANKS   2
 
 /*
@@ -483,11 +510,11 @@ typedef uint64_t xen_callback_t;
  * address space) relies on the fact that the regions reserved for the RAM
  * below are big enough to also accommodate such regions.
  */
-#define GUEST_RAM0_BASE   xen_mk_ullong(0x40000000) /* 3GB of low RAM @ 1GB */
-#define GUEST_RAM0_SIZE   xen_mk_ullong(0xc0000000)
+#define GUEST_RAM0_BASE   xen_mk_ullong(0x40000000) /* 2GB of low RAM @ 1GB */
+#define GUEST_RAM0_SIZE   xen_mk_ullong(0x80000000)
 
 /* 4GB @ 4GB Prefetch Memory for VPCI */
-#define GUEST_VPCI_ADDR_TYPE_PREFETCH_MEM   xen_mk_ullong(0x43000000)
+#define GUEST_VPCI_ADDR_TYPE_PREFETCH_MEM   xen_mk_ullong(0x42000000)
 #define GUEST_VPCI_PREFETCH_MEM_ADDR        xen_mk_ullong(0x100000000)
 #define GUEST_VPCI_PREFETCH_MEM_SIZE        xen_mk_ullong(0x100000000)
 
@@ -505,7 +532,6 @@ typedef uint64_t xen_callback_t;
 #define GUEST_MAX_VCPUS 128
 
 /* Interrupts */
-
 #define GUEST_TIMER_VIRT_PPI    27
 #define GUEST_TIMER_PHYS_S_PPI  29
 #define GUEST_TIMER_PHYS_NS_PPI 30
@@ -516,18 +542,8 @@ typedef uint64_t xen_callback_t;
 #define GUEST_VIRTIO_MMIO_SPI_FIRST   33
 #define GUEST_VIRTIO_MMIO_SPI_LAST    43
 
-/*
- * SGI is the preferred delivery mechanism of FF-A pending notifications or
- * schedule recveive interrupt. SGIs 8-15 are normally not used by a guest
- * as they in a non-virtualized system typically are assigned to the secure
- * world. Here we're free to use SGI 8-15 since they are virtual and have
- * nothing to do with the secure world.
- *
- * For partitioning of SGIs see also Arm Base System Architecture v1.0C,
- * https://developer.arm.com/documentation/den0094/
- */
-#define GUEST_FFA_NOTIF_PEND_INTR_ID      8
-#define GUEST_FFA_SCHEDULE_RECV_INTR_ID   9
+#define GUEST_VIRTIO_PCI_SPI_FIRST   44
+#define GUEST_VIRTIO_PCI_SPI_LAST    76
 
 /* PSCI functions */
 #define PSCI_cpu_suspend 0

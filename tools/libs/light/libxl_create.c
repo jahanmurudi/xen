@@ -630,7 +630,15 @@ int libxl__domain_make(libxl__gc *gc, libxl_domain_config *d_config,
     /* convenience aliases */
     libxl_domain_create_info *info = &d_config->c_info;
     libxl_domain_build_info *b_info = &d_config->b_info;
-
+    LOG(DEBUG, "Entering libxl__domain_make: soft_reset=%d", soft_reset);
+    LOG(DEBUG, "Domain info: type=%d, name=%s, domid=%d, ssidref=%d, poolid=%d",
+        info->type, info->name, info->domid, info->ssidref, info->poolid);
+    LOG(DEBUG, "Build info: max_vcpus=%d, event_channels=%d, max_grant_frames=%d, max_maptrack_frames=%d, max_grant_version=%d",
+        b_info->max_vcpus, b_info->event_channels, b_info->max_grant_frames,
+        b_info->max_maptrack_frames, b_info->max_grant_version);
+    LOG(DEBUG, "Build info (LLC colors): num_llc_colors=%d, colors[0]=%u",
+        b_info->num_llc_colors,
+        b_info->num_llc_colors > 0 ? b_info->llc_colors[0] : 0);
     assert(soft_reset || *domid == INVALID_DOMID);
 
     uuid_string = libxl__uuid2string(gc, info->uuid);
@@ -638,7 +646,7 @@ int libxl__domain_make(libxl__gc *gc, libxl_domain_config *d_config,
         rc = ERROR_NOMEM;
         goto out;
     }
-
+    LOG(DEBUG, "Domain UUID: %s", uuid_string);
     if (!soft_reset) {
         struct xen_domctl_createdomain create = {
             .ssidref = info->ssidref,
@@ -728,7 +736,8 @@ int libxl__domain_make(libxl__gc *gc, libxl_domain_config *d_config,
             } else {
                 local_domid = info->domid; /* May not be valid */
             }
-
+            LOG(DEBUG, "Attempting xc_domain_create: domid=%d, max_vcpus=%d, flags=0x%x",
+                local_domid, create.max_vcpus, create.flags);
             ret = xc_domain_create(ctx->xch, &local_domid, &create);
             if (ret < 0) {
                 /*
@@ -746,7 +755,7 @@ int libxl__domain_make(libxl__gc *gc, libxl_domain_config *d_config,
 
             /* A new domain now exists */
             *domid = local_domid;
-
+            LOG(DEBUG, "Setting LLC colors: num_llc_colors=%d", b_info->num_llc_colors);
             ret = xc_domain_set_llc_colors(ctx->xch, local_domid,
                                            b_info->llc_colors,
                                            b_info->num_llc_colors);
