@@ -24,6 +24,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
+#include "pcpu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -68,6 +69,12 @@
 #endif
 
 #define INT_FIELD_WIDTH(n) ((unsigned int)(log10(n) + 1))
+
+/* TEMPORARY: Forward declare the internal structure */
+struct xenstat_handle {
+    xc_interface *xc_handle;
+    /* Other members don't matter fo now */
+};
 
 /*
  * Function prototypes
@@ -205,6 +212,7 @@ field_id sort_field = FIELD_DOMID;
 unsigned int first_domain_index = 0;
 unsigned int delay = 3;
 unsigned int batch = 0;
+static unsigned int show_pcpus = 0;
 unsigned int loop = 1;
 unsigned int iterations = 0;
 int show_vcpus = 0;
@@ -240,6 +248,7 @@ static void usage(const char *program)
 	       "-r, --repeat-header  repeat table header before each domain\n"
 	       "-v, --vcpus          output vcpu data\n"
 	       "-b, --batch	     output in batch mode, no user input accepted\n"
+		   "-p, --pcpus	     show physical CPU stats\n"
 	       "-i, --iterations     number of iterations before exiting\n"
 	       "-f, --full-name      output the full domain name (not truncated)\n"
 	       "-z, --dom0-first     display dom0 first (ignore sorting)\n"
@@ -267,6 +276,8 @@ static void cleanup(void)
 		xenstat_free_node(cur_node);
 	if(xhandle != NULL)
 		xenstat_uninit(xhandle);
+
+	free_pcpu_stats();
 }
 
 /* Display the given message and gracefully exit */
@@ -1248,6 +1259,15 @@ static void top(void)
 	if (!batch)
 		do_bottom_line();
 
+    if (show_pcpus && xhandle != NULL ) {
+    if (update_pcpu_stats(xhandle->xc_handle) == 0) {
+        print_pcpu_stats();
+    }
+    else {
+        print("Error getting PCPU stats\n");
+    }
+   }
+
 	free(domains);
 }
 
@@ -1272,12 +1292,13 @@ int main(int argc, char **argv)
 		{ "vcpus",         no_argument,       NULL, 'v' },
 		{ "delay",         required_argument, NULL, 'd' },
 		{ "batch",	   no_argument,	      NULL, 'b' },
+		{ "pcpus",         no_argument,       NULL, 'p' },
 		{ "iterations",	   required_argument, NULL, 'i' },
 		{ "full-name",     no_argument,       NULL, 'f' },
 		{ "dom0-first",    no_argument,       NULL, 'z' },
 		{ 0, 0, 0, 0 },
 	};
-	const char *sopts = "hVnxrvd:bi:fz";
+	const char *sopts = "hVnxrvd:bpi:fz";
 
 	if (atexit(cleanup) != 0)
 		fail("Failed to install cleanup handler.\n");
@@ -1311,6 +1332,9 @@ int main(int argc, char **argv)
 			break;
 		case 'b':
 			batch = 1;
+			break;
+		case 'p':
+			show_pcpus = 1;
 			break;
 		case 'i':
 			iterations = atoi(optarg);
