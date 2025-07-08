@@ -1200,7 +1200,7 @@ static void top(void)
 		fail("Failed to retrieve statistics from libxenstat\n");
 
 	/* dump summary top information */
-	if (!batch)
+	if (!batch && !show_pcpus)
 		do_summary();
 
 	/* Count the number of domains for which to report data */
@@ -1256,7 +1256,7 @@ static void top(void)
 			do_vbd(domains[i]);
 	}
 
-	if (!batch)
+	if (!batch && !show_pcpus )
 		do_bottom_line();
 
     if (show_pcpus && xhandle != NULL ) {

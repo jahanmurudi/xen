@@ -15,7 +15,7 @@ static int num_pcpus = 0;
 static uint64_t *prev_idle = NULL;
 static uint64_t *prev_total = NULL;
 
-int update_pcpu_stats(xc_interface *xch) 
+int update_pcpu_stats(xc_interface *xch)
 {
     struct xen_sysctl_cpuinfo info[MAX_PCPUS];
     struct timeval now;
@@ -47,10 +47,13 @@ int update_pcpu_stats(xc_interface *xch)
         prev_total = new_prev_total;
         num_pcpus = nr_cpus;
 
-        // Initialize previous values (skip first calculation)
+        /* Initialize previous values (skip first calculation) */
         for (i = 0; i < nr_cpus; i++) {
             prev_idle[i] = XEN_IDLETIME_TO_USEC(info[i].idletime);
             prev_total[i] = current_total;
+            pcpu_stats[i].pcpu_id = i;
+            /* Default to 0% on first run */
+            pcpu_stats[i].usage_pct = 0.0;
         }
         return 0;
     }
@@ -68,8 +71,7 @@ int update_pcpu_stats(xc_interface *xch)
             pcpu_stats[i].usage_pct = 0.0;
         }
         pcpu_stats[i].pcpu_id = i;
-        
-        // Update history
+        /* Update history */
         prev_idle[i] = current_idle;
         prev_total[i] = current_total;
     }
@@ -77,7 +79,7 @@ int update_pcpu_stats(xc_interface *xch)
     return 0;
 }
 
-void print_pcpu_stats(void) 
+void print_pcpu_stats(void)
 {
     if (!pcpu_stats || num_pcpus == 0) {
         printf("No PCPU data available\n");
@@ -93,8 +95,8 @@ void print_pcpu_stats(void)
     
     // Print each CPU's data
     for (int i = 0; i < num_pcpus; i++) {
-        printf("│ %-5d │ %5.1f%% │\n", 
-               pcpu_stats[i].pcpu_id, 
+        printf("│ %-5d │ %5.1f%% │\n",
+               pcpu_stats[i].pcpu_id,
                pcpu_stats[i].usage_pct);
     }
     
@@ -102,7 +104,7 @@ void print_pcpu_stats(void)
     printf("└───────┴────────┘\n");
 }
 
-void free_pcpu_stats(void) 
+void free_pcpu_stats(void)
 {
     free(pcpu_stats);
     free(prev_idle);
