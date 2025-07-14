@@ -73,7 +73,7 @@
 /* TEMPORARY: Forward declare the internal structure */
 struct xenstat_handle {
     xc_interface *xc_handle;
-    /* Other members don't matter fo now */
+    /* Other members don't matter for now */
 };
 
 /*
@@ -238,23 +238,23 @@ static WINDOW *cwin;
 /* Print usage message, using given program name */
 static void usage(const char *program)
 {
-	printf("Usage: %s [OPTION]\n"
-	       "Displays ongoing information about xen vm resources \n\n"
-	       "-h, --help           display this help and exit\n"
-	       "-V, --version        output version information and exit\n"
-	       "-d, --delay=SECONDS  seconds between updates (default 3)\n"
-	       "-n, --networks       output vif network data\n"
-	       "-x, --vbds           output vbd block device data\n"
-	       "-r, --repeat-header  repeat table header before each domain\n"
-	       "-v, --vcpus          output vcpu data\n"
-	       "-b, --batch	     output in batch mode, no user input accepted\n"
-		   "-p, --pcpus	     show physical CPU stats\n"
-	       "-i, --iterations     number of iterations before exiting\n"
-	       "-f, --full-name      output the full domain name (not truncated)\n"
-	       "-z, --dom0-first     display dom0 first (ignore sorting)\n"
-	       "\n" XENTOP_BUGSTO,
-	       program);
-	return;
+    printf("Usage: %s [OPTION]\n"
+           "Displays ongoing information about xen vm resources \n\n"
+           "-h, --help           display this help and exit\n"
+           "-V, --version        output version information and exit\n"
+           "-d, --delay=SECONDS  seconds between updates (default 3)\n"
+           "-n, --networks       output vif network data\n"
+           "-x, --vbds           output vbd block device data\n"
+           "-r, --repeat-header  repeat table header before each domain\n"
+           "-v, --vcpus          output vcpu data\n"
+           "-b, --batch          output in batch mode, no user input accepted\n"
+           "-p, --pcpus          show physical CPU stats\n"
+           "-i, --iterations     number of iterations before exiting\n"
+           "-f, --full-name      output the full domain name (not truncated)\n"
+           "-z, --dom0-first     display dom0 first (ignore sorting)\n"
+           "\n" XENTOP_BUGSTO,
+           program);
+    return;
 }
 
 /* Print program version information */
@@ -1256,18 +1256,17 @@ static void top(void)
 			do_vbd(domains[i]);
 	}
 
-	if (!batch && !show_pcpus )
+	if (!batch && !show_pcpus)
 		do_bottom_line();
 
-    if (show_pcpus && xhandle != NULL ) {
-    if (update_pcpu_stats(xhandle->xc_handle) == 0) {
-        print_pcpu_stats();
+    if (show_pcpus && xhandle != NULL) {
+        if (update_pcpu_stats(xhandle->xc_handle) == 0) {
+            print_pcpu_stats();
+        } else {
+            print("Error getting PCPU stats\n");
+        }
     }
-    else {
-        print("Error getting PCPU stats\n");
-    }
-   }
-
+	
 	free(domains);
 }
 
@@ -1291,7 +1290,7 @@ int main(int argc, char **argv)
 		{ "repeat-header", no_argument,       NULL, 'r' },
 		{ "vcpus",         no_argument,       NULL, 'v' },
 		{ "delay",         required_argument, NULL, 'd' },
-		{ "batch",	   no_argument,	      NULL, 'b' },
+		{ "batch",         no_argument,	      NULL, 'b' },
 		{ "pcpus",         no_argument,       NULL, 'p' },
 		{ "iterations",	   required_argument, NULL, 'i' },
 		{ "full-name",     no_argument,       NULL, 'f' },
